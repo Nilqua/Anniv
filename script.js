@@ -2,9 +2,7 @@
    พื้นที่ตั้งค่าข้อมูล (สามารถแก้ไขข้อความ วันที่ และรูปภาพได้ตรงนี้)
    ========================================================================== */
 const CONFIG = {
-  // รหัสผ่าน 4 หลักสำหรับปลดล็อกหน้าแรก
   passcode: "2710",
-  // เพลงประกอบ: ใส่ชื่อไฟล์ เช่น "song.mp3" หรือลิงก์ YouTube เช่น "https://www.youtube.com/watch?v=..."
   musicSource: "bgm.mp3",
   musicTitle: "OFFONOFF - 춤",
   years: 6,
@@ -24,7 +22,6 @@ const CONFIG = {
     "img/4-2.jpg",
     "img/4-3.jpg",
     "img/4-4.jpg"
-    // รูปภาพสำหรับหน้าสุดท้าย
   ],
   dodgeHints: [
     "ลองอีกทีสิ",
@@ -53,12 +50,10 @@ let currentPage = 0;
 let dodgeCount = 0;
 let activeTimers = [];
 
-// กำหนดข้อความช่วงวันที่เริ่มต้น
 if (dateBadgeEl && CONFIG.dateRangeText) {
   dateBadgeEl.textContent = CONFIG.dateRangeText;
 }
 
-// สร้างจุดบอกตำแหน่งหน้า (dots) เฉพาะหน้าที่ปลดล็อกแล้ว (4 หน้าเรื่องราว)
 const storyPagesCount = Math.max(1, pages.length - 1);
 for (let i = 0; i < storyPagesCount; i++) {
   const dot = document.createElement("button");
@@ -67,7 +62,6 @@ for (let i = 0; i < storyPagesCount; i++) {
   dotsContainer.appendChild(dot);
 }
 
-// เอฟเฟกต์หัวใจลอยขึ้นมา
 function spawnHearts(count = 15) {
   if (prefersReducedMotion) return;
 
@@ -84,7 +78,6 @@ function spawnHearts(count = 15) {
   }
 }
 
-// ฟังก์ชันเปลี่ยนหน้า
 function goToPage(targetIndex) {
   activeTimers.forEach(id => {
     clearTimeout(id);
@@ -100,7 +93,6 @@ function goToPage(targetIndex) {
 
   const playerEl = document.getElementById("player");
 
-  // หน้าล็อกรหัสผ่าน (หน้า 0)
   if (currentPage === 0) {
     dotsContainer.style.display = "none";
     prevBtn.style.display = "none";
@@ -115,9 +107,7 @@ function goToPage(targetIndex) {
       dot.classList.toggle("on", idx === storyIdx);
     });
 
-    // ปุ่มย้อนกลับ: แสดงตั้งแต่หน้า 2 เป็นต้นไป (ไม่ให้ย้อนไปหน้า lock)
     prevBtn.style.display = (currentPage > 1) ? "block" : "none";
-    // ปุ่มถัดไป: ซ่อนในหน้าคำถาม (ต้องกดรู้สิ) และซ่อนในหน้าสุดท้าย
     nextBtn.style.display = (currentPage > 1 && currentPage < pages.length - 1) ? "block" : "none";
   }
 
@@ -131,12 +121,10 @@ function goToPage(targetIndex) {
   }
   if (currentPage === 3) spawnHearts(8);
   if (currentPage === 4) {
-    // รีเซ็ตซองถ้าย้อนกลับมาแล้วเปิดใหม่
     if (!isEnvelopeOpened) spawnHearts(10);
   }
 }
 
-// หน้า 1: ปุ่ม "ไม่รู้" วิ่งหนีเมื่อถูกแตะหรือชี้
 function dodgeButton(e) {
   if (e) e.preventDefault();
   dodgeCount++;
@@ -170,10 +158,8 @@ yesBtn.addEventListener("click", () => {
   goToPage(2);
 });
 
-// ตัวแปรและฟังก์ชันสำหรับเริ่มเล่นเพลงจากภายนอก
 let triggerMusicPlayback = null;
 
-// หน้า 0: ระบบปลดล็อกรหัสผ่าน
 function setupLockScreen() {
   const PASSCODE = (CONFIG.passcode || "2710").toString();
   const pinDots = document.querySelectorAll(".pin-dot");
@@ -253,7 +239,6 @@ function setupLockScreen() {
     });
   }
 
-  // รองรับการพิมพ์ผ่านแป้นพิมพ์คอมพิวเตอร์
   document.addEventListener("keydown", (e) => {
     if (currentPage === 0) {
       if (e.key >= "0" && e.key <= "9") {
@@ -265,7 +250,6 @@ function setupLockScreen() {
   });
 }
 
-// หน้า 2: กล่องของขวัญอินเทอร์แอคทีฟ
 let isGiftOpened = false;
 
 function spawnConfetti(count = 35) {
@@ -328,7 +312,6 @@ function setupGiftBox() {
   });
 }
 
-// หน้า 2: นับจำนวนปี
 function playRevealAnimation() {
   spawnHearts(16);
   const numEl = document.getElementById("num");
@@ -353,7 +336,6 @@ function playRevealAnimation() {
   activeTimers.push(timer);
 }
 
-// หน้า 4: ซองจดหมาย + typewriter
 let isEnvelopeOpened = false;
 
 function setupEnvelope() {
@@ -361,34 +343,28 @@ function setupEnvelope() {
   const letter = document.getElementById("letter");
   const hint = document.getElementById("envelopeHint");
   const titleEl = document.querySelector(".env-title");
-  const pageEl = document.getElementById("p2");
+  
   if (!envelope || !letter) return;
 
   function openEnvelope() {
     if (isEnvelopeOpened) return;
     isEnvelopeOpened = true;
 
-    // Phase 1: เปิดฝาซอง + ซ่อน hint/title
     envelope.classList.add("env-open");
     if (hint) { hint.style.opacity = "0"; hint.style.pointerEvents = "none"; }
     if (titleEl) { titleEl.style.opacity = "0"; titleEl.style.transform = "translateY(-8px)"; }
 
-    // Phase 2: กระดาษเลื่อนออกมาจากซอง (peek)
     setTimeout(() => {
       letter.classList.add("letter-peek");
     }, 450);
 
-    // Phase 3: ดึงกระดาษออกมาและขยายเต็มหน้า
     setTimeout(() => {
-      // เก็บตำแหน่งปัจจุบันของ letter ไว้เป็นจุดเริ่มต้น
-      const envelopeRect = envelope.getBoundingClientRect();
       const letterRect = letter.getBoundingClientRect();
 
-      // detach จาก envelope parent → เอาไปใส่ใน page section แทน
       const absoluteLetter = letter;
-      pageEl.appendChild(absoluteLetter);
+      // ย้ายกระดาษมาไว้ที่ body แทน เพื่อไม่ให้โดนจำกัดด้วย transform ของหน้าเพจ
+      document.body.appendChild(absoluteLetter);
 
-      // Set starting position (fixed, matching where letter was)
       absoluteLetter.style.position = "fixed";
       absoluteLetter.style.left = `${letterRect.left}px`;
       absoluteLetter.style.top = `${letterRect.top}px`;
@@ -400,25 +376,21 @@ function setupEnvelope() {
       absoluteLetter.style.borderRadius = "4px 4px 0 0";
       absoluteLetter.style.transition = "all 0.72s cubic-bezier(0.4, 0, 0.2, 1)";
 
-      // fade out envelope
       envelope.classList.add("env-fade");
 
-      // expand to horizontal centered card
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          const pageRect = pageEl.getBoundingClientRect();
-          // คำนวณขนาดแนวนอนและจัดให้อยู่กึ่งกลางหน้าจอ
-          const letterW = Math.min(580, pageRect.width - 24);
-          const letterH = Math.min(380, Math.max(260, pageRect.height - 40), letterW * 0.72);
-          const leftPos = pageRect.left + (pageRect.width - letterW) / 2;
-          const topPos = pageRect.top + (pageRect.height - letterH) / 2;
+          const letterW = Math.min(580, window.innerWidth - 24);
+          const letterH = Math.min(380, Math.max(260, window.innerHeight - 40), letterW * 0.72);
+          const leftPos = (window.innerWidth - letterW) / 2;
+          const topPos = (window.innerHeight - letterH) / 2;
 
           absoluteLetter.style.left = `${leftPos}px`;
           absoluteLetter.style.top = `${topPos}px`;
           absoluteLetter.style.width = `${letterW}px`;
           absoluteLetter.style.height = `${letterH}px`;
           absoluteLetter.style.borderRadius = "1.4rem";
-          absoluteLetter.style.boxShadow = "0 14px 44px rgba(122, 42, 73, 0.25)";
+          absoluteLetter.style.boxShadow = "0 16px 50px rgba(122, 42, 73, 0.4), 0 4px 15px rgba(0, 0, 0, 0.2)";
           absoluteLetter.style.overflowY = "auto";
           absoluteLetter.querySelector(".letter-inner").style.opacity = "1";
         });
@@ -427,7 +399,6 @@ function setupEnvelope() {
       spawnHearts(14);
     }, 1000);
 
-    // Phase 4: เริ่มพิมพ์ข้อความ
     setTimeout(() => {
       playTypewriterAnimation();
     }, 1600);
@@ -464,7 +435,6 @@ function playTypewriterAnimation() {
   activeTimers.push(timer);
 }
 
-// แสดงกรอบโพลารอยด์
 function renderGrid(containerId, photosList, defaultCount = 4) {
   const grid = document.getElementById(containerId);
   if (!grid) return;
@@ -495,7 +465,6 @@ function renderGrid(containerId, photosList, defaultCount = 4) {
 renderGrid("gridMemories", CONFIG.memoriesPhotos, 4);
 renderGrid("grid", CONFIG.photos, 4);
 
-// ระบบควบคุมการเปลี่ยนหน้า (ปุ่ม, คีย์บอร์ด, ปัดหน้าจอ)
 prevBtn.addEventListener("click", () => goToPage(currentPage - 1));
 nextBtn.addEventListener("click", () => goToPage(currentPage + 1));
 
@@ -521,9 +490,6 @@ document.addEventListener("touchend", (e) => {
   else if (touchDeltaX > 50) goToPage(currentPage - 1);
 }, { passive: true });
 
-/* ==========================================================================
-   ระบบเล่นเพลง (รองรับทั้งไฟล์ในเครื่องและ YouTube)
-   ========================================================================== */
 function initMusicPlayer() {
   const playBtn = document.getElementById("playBtn");
   const playIcon = document.getElementById("playIcon");
@@ -621,7 +587,6 @@ function initMusicPlayer() {
 
   playBtn.addEventListener("click", togglePlay);
 
-  // ควบคุมระดับเสียง (Volume & Mute)
   const volSlider = document.getElementById("volSlider");
   const muteBtn = document.getElementById("muteBtn");
   let previousVolume = 0.3;
@@ -665,7 +630,6 @@ function initMusicPlayer() {
     }
   };
 
-  // เริ่มเล่นเพลงอัตโนมัติเมื่อกด "รู้สิ" ในหน้าแรก
   yesBtn.addEventListener("click", () => {
     if (!isPlaying) {
       togglePlay();
@@ -673,7 +637,6 @@ function initMusicPlayer() {
   }, { once: true });
 }
 
-// เอฟเฟกต์ประกายหัวใจตามรอยนิ้วสัมผัสหรือการคลิก
 function initTapSparkleTrail() {
   if (prefersReducedMotion) return;
   const symbols = ["♥", "✦", "✧", "♥", "❤"];
