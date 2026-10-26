@@ -14,7 +14,36 @@ const CONFIG = {
     "img/3-4.jpg",
     "img/3-5.jpg",
     "img/3-6.jpg",
-    "img/3-7.jpg"
+    "img/3-7.jpg",
+    "img/1652028760713.jpg",
+    "img/1706065464366.jpg",
+    "img/1730298568384.jpg",
+    "img/1730298890508.jpg",
+    "img/1730298901750.jpg",
+    "img/IMG20220115142104.jpg",
+    "img/IMG20220207110942.jpg",
+    "img/IMG20220514180043.jpg",
+    "img/IMG20220514180749.jpg",
+    "img/IMG20220515061954.jpg",
+    "img/IMG20220607093817.jpg",
+    "img/IMG20220806113548.jpg",
+    "img/IMG20220806114419.jpg",
+    "img/IMG20220825181910.jpg",
+    "img/IMG20221215091239.jpg",
+    "img/IMG20221215091341.jpg",
+    "img/IMG20230113232820.jpg",
+    "img/IMG20230114115733.jpg",
+    "img/IMG20230718080232.jpg",
+    "img/IMG20230915083032.jpg",
+    "img/IMG20231213160104.jpg",
+    "img/IMG20231213164556.jpg",
+    "img/IMG20240105112855.jpg",
+    "img/IMG20240326152305.jpg",
+    "img/IMG20250306135811.jpg",
+    "img/IMG20250306135946.jpg",
+    "img/IMG20250317142451.jpg",
+    "img/IMG20250317142455.jpg"
+
   ],
   message: "ขอบคุณนะที่อยู่ด้วยกันมาตลอด 6 ปีที่ผ่านมา ขอโทษด้วยนะเรื่องที่ทำผิดไปหรือทำให้ไม่พอใจ แต่เค้าขอบคุณสำหรับทุกความทรงจำนะ เราอาจจะทะเลาะกันบ้าง แต่เค้าขอบคุณนะที่คอยคุยกันแล้วปรับความเข้าใจกันเสมอ ปีนี้อาจจะไม่ได้มีของขวัญอะไรให้ แต่เค้าอยากขอบคุณเธอจริงๆนะที่คอยอยู่ด้วยกัน หลังจากนี้เค้าก็อยากให้เราอยู่ด้วยกันไปนานๆนะ ❤",
   photos: [
@@ -26,8 +55,8 @@ const CONFIG = {
   dodgeHints: [
     "ลองอีกทีสิ",
     "คิดดี ๆ นะ",
-    "ใกล้แล้วนะ",
-    "ยังจะไม่รู้อีกเหรอ",
+    "ใช่หรอออ",
+    "ยังไม่รู้เหรอ",
     "เหลือปุ่มเดียวแล้วนะ"
   ]
 };
@@ -85,6 +114,27 @@ function goToPage(targetIndex) {
   });
   activeTimers = [];
 
+  // คืนค่าแอนิเมชันทั้งหมดเมื่อกดย้อนกลับ
+  if (targetIndex < currentPage) {
+    isGiftOpened = false;
+    isEnvelopeOpened = false;
+    document.getElementById("giftBox")?.classList.remove("opened");
+    document.getElementById("giftContent")?.classList.remove("revealed");
+    if (document.getElementById("num")) document.getElementById("num").textContent = "0";
+    
+    const env = document.getElementById("envelope");
+    const letter = document.getElementById("letter");
+    if (env) env.classList.remove("env-open", "env-fade");
+    if (letter) {
+      letter.classList.remove("letter-peek");
+      letter.removeAttribute("style");
+      document.getElementById("p2")?.appendChild(letter);
+    }
+    if (document.getElementById("envelopeHint")) document.getElementById("envelopeHint").style.cssText = "";
+    if (document.querySelector(".env-title")) document.querySelector(".env-title").style.cssText = "";
+    if (document.getElementById("typed")) document.getElementById("typed").textContent = "";
+  }
+
   currentPage = Math.max(0, Math.min(pages.length - 1, targetIndex));
 
   pages.forEach((page, idx) => {
@@ -113,11 +163,8 @@ function goToPage(targetIndex) {
 
   if (currentPage === 1) spawnHearts(8);
   if (currentPage === 2) {
-    if (!isGiftOpened) {
-      spawnHearts(8);
-    } else {
-      playRevealAnimation();
-    }
+    if (!isGiftOpened) spawnHearts(8);
+    else playRevealAnimation();
   }
   if (currentPage === 3) spawnHearts(8);
   if (currentPage === 4) {
@@ -439,22 +486,30 @@ function renderGrid(containerId, photosList, defaultCount = 4) {
   const grid = document.getElementById(containerId);
   if (!grid) return;
   grid.innerHTML = "";
-  const totalFrames = Math.max(defaultCount, photosList.length);
+  
+  // สุ่มลำดับรูปภาพก่อนนำมาแสดง
+  const shuffled = [...photosList].sort(() => 0.5 - Math.random());
+  const totalFrames = Math.max(defaultCount, shuffled.length);
 
   for (let i = 0; i < totalFrames; i++) {
     const frame = document.createElement("div");
     frame.className = "pol";
 
+    // สุ่มขนาด (0.7 ถึง 1.2), การหมุน (-25 ถึง 25 องศา) และตำแหน่ง
+    const scale = 0.7 + Math.random() * 0.5;
+    const rotate = (Math.random() - 0.5) * 50;
+    const tx = (Math.random() - 0.5) * 40;
+    const ty = (Math.random() - 0.5) * 40;
+    
+    frame.style.transform = `translate(${tx}px, ${ty}px) scale(${scale}) rotate(${rotate}deg)`;
+
     const placeholder = document.createElement("div");
     placeholder.className = "ph";
 
-    if (photosList[i]) {
+    if (shuffled[i]) {
       const img = document.createElement("img");
-      img.src = photosList[i];
-      img.alt = `ความทรงจำ ${i + 1}`;
+      img.src = shuffled[i];
       placeholder.appendChild(img);
-    } else {
-      placeholder.textContent = "♥";
     }
 
     frame.appendChild(placeholder);
