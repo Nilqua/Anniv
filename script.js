@@ -2,6 +2,8 @@
    พื้นที่ตั้งค่าข้อมูล (สามารถแก้ไขข้อความ วันที่ และรูปภาพได้ตรงนี้)
    ========================================================================== */
 const CONFIG = {
+  // รหัสผ่าน 4 หลักสำหรับปลดล็อกหน้าแรก
+  passcode: "2710",
   // เพลงประกอบ: ใส่ชื่อไฟล์ เช่น "song.mp3" หรือลิงก์ YouTube เช่น "https://www.youtube.com/watch?v=..."
   musicSource: "bgm.mp3",
   musicTitle: "OFFONOFF - 춤",
@@ -56,13 +58,14 @@ if (dateBadgeEl && CONFIG.dateRangeText) {
   dateBadgeEl.textContent = CONFIG.dateRangeText;
 }
 
-// สร้างจุดบอกตำแหน่งหน้า (dots)
-pages.forEach((_, index) => {
+// สร้างจุดบอกตำแหน่งหน้า (dots) เฉพาะหน้าที่ปลดล็อกแล้ว (4 หน้าเรื่องราว)
+const storyPagesCount = Math.max(1, pages.length - 1);
+for (let i = 0; i < storyPagesCount; i++) {
   const dot = document.createElement("button");
-  dot.className = `dot${index === 0 ? " on" : ""}`;
-  dot.setAttribute("aria-label", `หน้า ${index + 1}`);
+  dot.className = `dot${i === 0 ? " on" : ""}`;
+  dot.setAttribute("aria-label", `หน้า ${i + 1}`);
   dotsContainer.appendChild(dot);
-});
+}
 
 // เอฟเฟกต์หัวใจลอยขึ้นมา
 function spawnHearts(count = 15) {
@@ -95,18 +98,41 @@ function goToPage(targetIndex) {
     page.classList.toggle("on", idx === currentPage);
   });
 
-  dotsContainer.querySelectorAll(".dot").forEach((dot, idx) => {
-    dot.classList.toggle("on", idx === currentPage);
-  });
+  const playerEl = document.getElementById("player");
 
-  prevBtn.style.display = (currentPage > 0) ? "block" : "none";
-  nextBtn.style.display = (currentPage > 0 && currentPage < pages.length - 1) ? "block" : "none";
+  // หน้าล็อกรหัสผ่าน (หน้า 0)
+  if (currentPage === 0) {
+    dotsContainer.style.display = "none";
+    prevBtn.style.display = "none";
+    nextBtn.style.display = "none";
+    if (playerEl) playerEl.style.display = "none";
+  } else {
+    dotsContainer.style.display = "flex";
+    if (playerEl) playerEl.style.display = "flex";
 
-  if (currentPage === 1) playRevealAnimation();
-  if (currentPage === 2) spawnHearts(8);
-  if (currentPage === 3) {
-    playTypewriterAnimation();
-    spawnHearts(14);
+    const storyIdx = currentPage - 1;
+    dotsContainer.querySelectorAll(".dot").forEach((dot, idx) => {
+      dot.classList.toggle("on", idx === storyIdx);
+    });
+
+    // ปุ่มย้อนกลับ: แสดงตั้งแต่หน้า 2 เป็นต้นไป (ไม่ให้ย้อนไปหน้า lock)
+    prevBtn.style.display = (currentPage > 1) ? "block" : "none";
+    // ปุ่มถัดไป: ซ่อนในหน้าคำถาม (ต้องกดรู้สิ) และซ่อนในหน้าสุดท้าย
+    nextBtn.style.display = (currentPage > 1 && currentPage < pages.length - 1) ? "block" : "none";
+  }
+
+  if (currentPage === 1) spawnHearts(8);
+  if (currentPage === 2) {
+    if (!isGiftOpened) {
+      spawnHearts(8);
+    } else {
+      playRevealAnimation();
+    }
+  }
+  if (currentPage === 3) spawnHearts(8);
+  if (currentPage === 4) {
+    // รีเซ็ตซองถ้าย้อนกลับมาแล้วเปิดใหม่
+    if (!isEnvelopeOpened) spawnHearts(10);
   }
 }
 
@@ -141,8 +167,166 @@ noBtn.addEventListener("keydown", (e) => {
 
 yesBtn.addEventListener("click", () => {
   spawnHearts(18);
-  goToPage(1);
+  goToPage(2);
 });
+
+// ตัวแปรและฟังก์ชันสำหรับเริ่มเล่นเพลงจากภายนอก
+let triggerMusicPlayback = null;
+
+// หน้า 0: ระบบปลดล็อกรหัสผ่าน
+function setupLockScreen() {
+  const PASSCODE = (CONFIG.passcode || "2710").toString();
+  const pinDots = document.querySelectorAll(".pin-dot");
+  const pinDisplay = document.getElementById("pinDisplay");
+  const lockHint = document.getElementById("lockHint");
+  const hintBtn = document.getElementById("hintBtn");
+  const delBtn = document.getElementById("delBtn");
+  const keys = document.querySelectorAll(".key[data-num]");
+
+  let enteredCode = "";
+  let isUnlocked = false;
+
+  function updatePinDots() {
+    pinDots.forEach((dot, i) => {
+      dot.classList.toggle("filled", i < enteredCode.length);
+    });
+  }
+
+  function handleDigit(num) {
+    if (isUnlocked || enteredCode.length >= 4) return;
+    enteredCode += num;
+    updatePinDots();
+
+    if (enteredCode.length === 4) {
+      if (enteredCode === PASSCODE) {
+        isUnlocked = true;
+        pinDisplay.classList.remove("shake");
+        lockHint.textContent = "รหัสถูกต้อง ยินดีต้อนรับนะ";
+        spawnConfetti(35);
+        spawnHearts(18);
+
+        if (typeof triggerMusicPlayback === "function") {
+          triggerMusicPlayback();
+        }
+
+        setTimeout(() => {
+          goToPage(1);
+        }, 550);
+      } else {
+        pinDisplay.classList.add("shake");
+        lockHint.textContent = "รหัสยังไม่ถูกน้า คิดดี ๆ สิ";
+        setTimeout(() => {
+          enteredCode = "";
+          updatePinDots();
+          pinDisplay.classList.remove("shake");
+        }, 500);
+      }
+    }
+  }
+
+  function deleteDigit() {
+    if (isUnlocked || enteredCode.length === 0) return;
+    enteredCode = enteredCode.slice(0, -1);
+    updatePinDots();
+  }
+
+  keys.forEach(btn => {
+    btn.addEventListener("click", () => {
+      handleDigit(btn.getAttribute("data-num"));
+    });
+  });
+
+  if (delBtn) {
+    delBtn.addEventListener("click", deleteDigit);
+  }
+
+  if (hintBtn) {
+    let hintLevel = 0;
+    const hints = [
+      "คำใบ้: วันสำคัญของเราสองคน (วัน/เดือน)",
+      "คำใบ้: วันที่ 27 เดือน 10",
+      "คำใบ้: วันที่ตกลงเป็นแฟนกัน 2710"
+    ];
+    hintBtn.addEventListener("click", () => {
+      hintLevel = (hintLevel + 1) % hints.length;
+      lockHint.textContent = hints[hintLevel];
+    });
+  }
+
+  // รองรับการพิมพ์ผ่านแป้นพิมพ์คอมพิวเตอร์
+  document.addEventListener("keydown", (e) => {
+    if (currentPage === 0) {
+      if (e.key >= "0" && e.key <= "9") {
+        handleDigit(e.key);
+      } else if (e.key === "Backspace") {
+        deleteDigit();
+      }
+    }
+  });
+}
+
+// หน้า 2: กล่องของขวัญอินเทอร์แอคทีฟ
+let isGiftOpened = false;
+
+function spawnConfetti(count = 35) {
+  if (prefersReducedMotion) return;
+  const colors = ["#ff7fa1", "#ffd87a", "#ff9bb5", "#ffffff", "#b3637f", "#ffe3ec"];
+  const rect = document.getElementById("giftBox")?.getBoundingClientRect() || {
+    left: window.innerWidth / 2 - 55,
+    top: window.innerHeight / 2 - 40
+  };
+  const startX = rect.left + 55;
+  const startY = rect.top + 40;
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti";
+    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    el.style.left = `${startX}px`;
+    el.style.top = `${startY}px`;
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 80 + Math.random() * 240;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - 40;
+    const rot = (Math.random() - 0.5) * 720;
+
+    el.style.setProperty("--tx", `${tx}px`);
+    el.style.setProperty("--ty", `${ty}px`);
+    el.style.setProperty("--rot", `${rot}deg`);
+    el.style.width = `${6 + Math.random() * 8}px`;
+    el.style.height = `${8 + Math.random() * 10}px`;
+
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2900);
+  }
+}
+
+function setupGiftBox() {
+  const giftBox = document.getElementById("giftBox");
+  const giftContent = document.getElementById("giftContent");
+  const giftHint = document.getElementById("giftHint");
+  if (!giftBox) return;
+
+  function openGift() {
+    if (isGiftOpened) return;
+    isGiftOpened = true;
+    giftBox.classList.add("opened");
+    giftContent.classList.add("revealed");
+    if (giftHint) giftHint.textContent = "เย้ สุขสันต์วันครบรอบนะ";
+    spawnConfetti(45);
+    spawnHearts(18);
+    playRevealAnimation();
+  }
+
+  giftBox.addEventListener("click", openGift);
+  giftBox.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openGift();
+    }
+  });
+}
 
 // หน้า 2: นับจำนวนปี
 function playRevealAnimation() {
@@ -169,8 +353,98 @@ function playRevealAnimation() {
   activeTimers.push(timer);
 }
 
-// หน้า 3: แอนิเมชันพิมพ์ข้อความทีละตัวอักษร
+// หน้า 4: ซองจดหมาย + typewriter
+let isEnvelopeOpened = false;
+
+function setupEnvelope() {
+  const envelope = document.getElementById("envelope");
+  const letter = document.getElementById("letter");
+  const hint = document.getElementById("envelopeHint");
+  const titleEl = document.querySelector(".env-title");
+  const pageEl = document.getElementById("p2");
+  if (!envelope || !letter) return;
+
+  function openEnvelope() {
+    if (isEnvelopeOpened) return;
+    isEnvelopeOpened = true;
+
+    // Phase 1: เปิดฝาซอง + ซ่อน hint/title
+    envelope.classList.add("env-open");
+    if (hint) { hint.style.opacity = "0"; hint.style.pointerEvents = "none"; }
+    if (titleEl) { titleEl.style.opacity = "0"; titleEl.style.transform = "translateY(-8px)"; }
+
+    // Phase 2: กระดาษเลื่อนออกมาจากซอง (peek)
+    setTimeout(() => {
+      letter.classList.add("letter-peek");
+    }, 450);
+
+    // Phase 3: ดึงกระดาษออกมาและขยายเต็มหน้า
+    setTimeout(() => {
+      // เก็บตำแหน่งปัจจุบันของ letter ไว้เป็นจุดเริ่มต้น
+      const envelopeRect = envelope.getBoundingClientRect();
+      const letterRect = letter.getBoundingClientRect();
+
+      // detach จาก envelope parent → เอาไปใส่ใน page section แทน
+      const absoluteLetter = letter;
+      pageEl.appendChild(absoluteLetter);
+
+      // Set starting position (fixed, matching where letter was)
+      absoluteLetter.style.position = "fixed";
+      absoluteLetter.style.left = `${letterRect.left}px`;
+      absoluteLetter.style.top = `${letterRect.top}px`;
+      absoluteLetter.style.width = `${letterRect.width}px`;
+      absoluteLetter.style.height = `${letterRect.height}px`;
+      absoluteLetter.style.transform = "none";
+      absoluteLetter.style.margin = "0";
+      absoluteLetter.style.zIndex = "50";
+      absoluteLetter.style.borderRadius = "4px 4px 0 0";
+      absoluteLetter.style.transition = "all 0.72s cubic-bezier(0.4, 0, 0.2, 1)";
+
+      // fade out envelope
+      envelope.classList.add("env-fade");
+
+      // expand to horizontal centered card
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const pageRect = pageEl.getBoundingClientRect();
+          // คำนวณขนาดแนวนอนและจัดให้อยู่กึ่งกลางหน้าจอ
+          const letterW = Math.min(580, pageRect.width - 24);
+          const letterH = Math.min(380, Math.max(260, pageRect.height - 40), letterW * 0.72);
+          const leftPos = pageRect.left + (pageRect.width - letterW) / 2;
+          const topPos = pageRect.top + (pageRect.height - letterH) / 2;
+
+          absoluteLetter.style.left = `${leftPos}px`;
+          absoluteLetter.style.top = `${topPos}px`;
+          absoluteLetter.style.width = `${letterW}px`;
+          absoluteLetter.style.height = `${letterH}px`;
+          absoluteLetter.style.borderRadius = "1.4rem";
+          absoluteLetter.style.boxShadow = "0 14px 44px rgba(122, 42, 73, 0.25)";
+          absoluteLetter.style.overflowY = "auto";
+          absoluteLetter.querySelector(".letter-inner").style.opacity = "1";
+        });
+      });
+
+      spawnHearts(14);
+    }, 1000);
+
+    // Phase 4: เริ่มพิมพ์ข้อความ
+    setTimeout(() => {
+      playTypewriterAnimation();
+    }, 1600);
+  }
+
+  envelope.addEventListener("click", openEnvelope);
+  envelope.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openEnvelope();
+    }
+  });
+}
+
 function playTypewriterAnimation() {
+  const typedEl = document.getElementById("typed");
+  if (!typedEl) return;
   typedEl.style.whiteSpace = "pre-line";
 
   if (prefersReducedMotion) {
@@ -184,10 +458,8 @@ function playTypewriterAnimation() {
   const timer = setInterval(() => {
     charIndex++;
     typedEl.textContent = CONFIG.message.slice(0, charIndex);
-    if (charIndex >= CONFIG.message.length) {
-      clearInterval(timer);
-    }
-  }, 65);
+    if (charIndex >= CONFIG.message.length) clearInterval(timer);
+  }, 50);
 
   activeTimers.push(timer);
 }
@@ -387,6 +659,12 @@ function initMusicPlayer() {
     });
   }
 
+  triggerMusicPlayback = () => {
+    if (!isPlaying) {
+      togglePlay();
+    }
+  };
+
   // เริ่มเล่นเพลงอัตโนมัติเมื่อกด "รู้สิ" ในหน้าแรก
   yesBtn.addEventListener("click", () => {
     if (!isPlaying) {
@@ -395,4 +673,52 @@ function initMusicPlayer() {
   }, { once: true });
 }
 
+// เอฟเฟกต์ประกายหัวใจตามรอยนิ้วสัมผัสหรือการคลิก
+function initTapSparkleTrail() {
+  if (prefersReducedMotion) return;
+  const symbols = ["♥", "✦", "✧", "♥", "❤"];
+  const colors = ["#ff7fa1", "#ffd87a", "#ff9bb5", "#ffffff", "#e8a9bf"];
+
+  let lastSpawn = 0;
+  function createSparkle(x, y) {
+    const now = Date.now();
+    if (now - lastSpawn < 45) return;
+    lastSpawn = now;
+
+    const el = document.createElement("div");
+    el.className = "tap-sparkle";
+    el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    el.style.color = colors[Math.floor(Math.random() * colors.length)];
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.style.fontSize = `${0.85 + Math.random() * 0.7}rem`;
+
+    const dx = (Math.random() - 0.5) * 36;
+    const dy = -15 - Math.random() * 25;
+    const rot = (Math.random() - 0.5) * 60;
+
+    el.style.setProperty("--dx", `${dx}px`);
+    el.style.setProperty("--dy", `${dy}px`);
+    el.style.setProperty("--rot", `${rot}deg`);
+
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+
+  document.addEventListener("pointerdown", (e) => {
+    createSparkle(e.clientX, e.clientY);
+  }, { passive: true });
+
+  document.addEventListener("pointermove", (e) => {
+    if (Math.random() < 0.22) {
+      createSparkle(e.clientX, e.clientY);
+    }
+  }, { passive: true });
+}
+
+initTapSparkleTrail();
+setupLockScreen();
+setupGiftBox();
+setupEnvelope();
 initMusicPlayer();
+goToPage(0);
