@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>วันนี้วันอะไรนะ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="stage">
+    <!-- หน้า 1: คำถามเริ่มต้น -->
+    <section class="page on" id="p0" aria-labelledby="heading-p0">
+      <div class="wob" style="font-size: 3.2rem;" aria-hidden="true">&#127856;</div>
+      <h1 id="heading-p0">รู้ไหมว่าวันนี้<br>เป็นวันอะไร?</h1>
+      <p class="soft" id="hint">ตอบดี ๆ นะ</p>
+      <div class="row">
+        <button id="yes" type="button">รู้สิ</button>
+        <button id="no" class="ghost" type="button">ไม่รู้</button>
+      </div>
+    </section>
+
+    <!-- หน้า 2: นับจำนวนปีครบรอบ -->
+    <section class="page" id="p1" aria-labelledby="heading-p1">
+      <p class="soft">ถูกต้องแล้วค้าบบ</p>
+      <h1 id="heading-p1">วันครบรอบของเรา</h1>
+      <p class="big" id="num">0</p>
+      <h1>ปีแล้วนะ</h1>
+      <p class="date" id="dateBadge">27 ต.ค. 2020 &#10084; 27 ต.ค. 2026</p>
+    </section>
+
+    <!-- หน้า 3: ความทรงจำปีที่ผ่านมา -->
+    <section class="page" id="p-memories" aria-labelledby="heading-memories">
+      <h1 id="heading-memories">รู้ไหม<br>เราผ่านอะไรมากันหลายอย่างมากก</h1>
+      <div class="grid" id="gridMemories"></div>
+    </section>
+
+    <!-- หน้า 4: ข้อความในใจ -->
+    <section class="page" id="p2" aria-labelledby="heading-p2">
+      <h1 id="heading-p2">มีอะไรอยากบอก</h1>
+      <div class="msg">
+        <p id="typed"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ปุ่มนำทางและตัวบอกตำแหน่งหน้า -->
+  <button id="prev" type="button" class="ghost">ย้อนกลับ</button>
+  <button id="next" type="button">ต่อไป</button>
+  <nav id="dots" aria-hidden="true"></nav>
+
+  <!-- เครื่องเล่นเพลงด้านล่างตรงกลาง -->
+  <div id="player" class="music-player" aria-label="เครื่องเล่นเพลง">
+    <button id="playBtn" type="button" class="player-btn" aria-label="เล่นหรือหยุดเพลง">
+      <span class="player-icon" id="playIcon">&#9654;</span>
+    </button>
+    <div class="player-info">
+      <span class="player-title" id="playerTitle">เพลงประกอบ</span>
+      <div class="equalizer" id="equalizer" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="volume-box">
+      <button id="muteBtn" type="button" class="vol-btn" aria-label="ปิดหรือเปิดเสียง">
+        <svg class="vol-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+      </button>
+      <input id="volSlider" type="range" min="0" max="1" step="0.05" value="0.3" aria-label="ระดับเสียง" class="vol-slider">
+    </div>
+  </div>
+  <div id="yt-container" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
+  <audio id="audio-player" preload="auto" style="display:none;"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
